@@ -165,6 +165,23 @@ MSI Center's performance mode raises the limit to 45 W (about +12 %); DLSS quali
 the Optimus path (the picture goes through the integrated Radeon to the display) also costs a copy per frame,
 "Discrete graphics" mode where the laptop offers it removes it. None of these is changed by this fork.
 
+## Tests run on this branch (2026-11-09, after the rebase)
+
+| Test | Result |
+|---|---|
+| `ocarina.exe --selftest`, `--probe-cfg` | passed |
+| `tests/flags_check.py` | 0 mismatches (-O0 and -O1, 2 000 484 operand pairs) |
+| `tests/diff/simd.py` (Unicorn) | 20 000 encodings, 159 976 cases, 0 failing |
+| `tests/diff/atomic.py` (Unicorn) | 198 tests, 12 672 cases, 0 failing |
+| `tests/diff/lift.py --exefs <this game's exefs> --encodings 4000 --cases 2` | 12 000 encodings, 23 984 cases, 0 failing |
+| `tests/diff/func.py --exefs <this game's exefs> --functions 120 --cases 6` | 126 functions, 426 cases, 0 failing |
+| `tests/launcher_test.py` (Python 3.14) | 81 of 82 passed under a running compile; the failing one (a 60 s staging timeout) passed alone |
+| `tests/excl_mt.py` | contention passes; the ABA checks fail ("stx status 0, want 1") with the launcher's clang 23.1.5; the files it tests (`runtime/cpu.h`, `tests/excl_mt.c`) are identical to upstream, so this is not of this branch |
+
+The lifter and the CPU headers are untouched by this branch; the differential tests are regression evidence. The
+toolchain here (the launcher's MSYS2 UCRT64) has GNU ld only, no lld: `make_game.py` links with GNU ld, and
+`tests/diff/func.py` asked for lld unconditionally (fixed to ask only when it is there).
+
 ## Benchmark discipline
 
 One measured run at a time (`scripts/run_queue.sh` waits until no `ocarina.exe` runs): two games at once on

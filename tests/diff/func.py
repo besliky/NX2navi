@@ -25,6 +25,7 @@ import argparse
 import os
 import platform
 import random
+import shutil
 import subprocess
 import sys
 import time
@@ -214,7 +215,9 @@ def build(work, emitted, jobs, cflags):
     if any(p.wait() for p in procs):
         raise SystemExit('compile failed')
     exe = work / ('func.exe' if os.name == 'nt' else 'func')
-    subprocess.check_call([cc, '-fuse-ld=lld', '-o', str(exe)] + [str(o) for o in objs], env=env)
+    # lld where the toolchain has it (the launcher's MSYS2 UCRT64 ships GNU ld only); the default linker otherwise
+    lld = ['-fuse-ld=lld'] if shutil.which('ld.lld', path=os.path.dirname(cc) + os.pathsep + os.environ.get('PATH', '')) else []
+    subprocess.check_call([cc, *lld, '-o', str(exe)] + [str(o) for o in objs], env=env)
     return exe
 
 
