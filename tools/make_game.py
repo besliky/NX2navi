@@ -1535,6 +1535,9 @@ def step_key(step, identity, out=None):
         return lift
     compile_key = (f'compile|{lift}|{tree_digest(KIT / "runtime", ("**/*",))}|{sha256_file(Path(__file__))}|{kit_version()}'
                    f'|cpu {cpu_tag()}')
+    extra = [os.environ.get(v, '').strip() for v in ('NX2NAVI_GUEST_CFLAGS', 'NX2NAVI_GUEST_OPT', 'NX2NAVI_RUNTIME_CFLAGS')]
+    if any(extra):   # the per-machine flags (runtime_cmd): a change compiles again; unset, the key is as before
+        compile_key += '|flags ' + '|'.join(extra)
     if step == 'compile':
         return compile_key
     # shaders: the built game and the translator that prepared them
