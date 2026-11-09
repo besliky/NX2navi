@@ -122,8 +122,7 @@ def main():
     cats = collections.Counter()
     for rip, n in prof['rips']:
         if base <= rip < exe_end:
-            i = bisect.bisect_right(addrs, rip - base) - 1
-            name = names[i] if i >= 0 else '?'
+            name = name_of(rip)   # the map's addresses carry the image base (img_base), a Rip the runtime base
             funcs[name] += n
             cats['guest (f_*)' if name.startswith('f_') else 'runtime host (exe)'] += n
             continue
