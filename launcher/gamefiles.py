@@ -316,7 +316,22 @@ def extract_fonts(layout, game_dir='', dump=''):
         fam = font_family(otf) if otf else None
         if not otf or not fam:
             continue
-        (d / f'{role}.otf').write_bytes(otf)
-        (d / f'{role}.family').write_text(fam, encoding='utf-8')
-        out[role] = (d / f'{role}.otf', fam)
+        path, meta = d / f'{role}.otf', d / f'{role}.family'
+        try:
+            same = path.is_file() and path.read_bytes() == otf
+        except OSError:
+            same = False
+        if not same:
+            # A font file this process registered (winsys.register_font) is locked by Windows: writing it again
+            # fails with "Permission denied", and the file is already the one wanted when its bytes match (above).
+            tmp = d / f'{role}.otf.tmp'
+            tmp.write_bytes(otf)
+            try:
+                os.replace(tmp, path)
+            except PermissionError:
+                tmp.unlink(missing_ok=True)
+                if not path.is_file():
+                    raise
+        meta.write_text(fam, encoding='utf-8')
+        out[role] = (path, fam)
     return out

@@ -233,6 +233,12 @@ class App:
             if winsys.register_font(path):
                 fams[role] = family
         available = set(tkfont.families(self.root))
+        # The decoded font's family is its typographic name (name id 16, "Cetra Display Pro"); Windows enumerates a
+        # registered font by its legacy family name (name id 1, "Cetra Display Pro Medium"), which is what Tk lists,
+        # so a family Tk does not list as given is looked up as a prefix of a listed one.
+        for role, fam in list(fams.items()):
+            if fam not in available:
+                fams[role] = next((f for f in sorted(available) if f.startswith(fam)), fam)
         fallback = next((f for f in ('Segoe UI', 'Source Sans 3', 'Noto Sans', 'DejaVu Sans', 'Helvetica')
                          if f in available), 'TkDefaultFont')
         # Every text is in the game's Cetra Display; only the build log keeps a monospaced face so its lines align.
