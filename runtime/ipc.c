@@ -142,6 +142,20 @@ static void applet_stub_handler(IpcSession *s, const IpcRequest *rq, IpcResponse
         rs->result = 0;
         return;
     }
+    if (!strcmp(s->name, "library applet creator") && rq->cmd == 0) {   // CreateLibraryApplet(id, mode)
+        // The host runs no library applets (browser, keyboard, error viewer: the keyboard and the error dialog are
+        // answered by overrides of their nn:: entry points, the browser by ov_web.c). A success without an object
+        // here left the SDK dereferencing null; the call fails instead, and the log names the applet asked for.
+        uint32_t id = rq->data_size >= 4 ? IPC_ARG(rq, uint32_t, 0) : 0;
+        static int logged;
+        if (logged < 8) {
+            logged++;
+            rt_log("applet: CreateLibraryApplet(%#x) refused: the host has no library applets; the SDK call fails "
+                   "instead of running one", id);
+        }
+        rs->result = IPC_R_UNKNOWN_COMMAND;
+        return;
+    }
     if (rt_trace & RT_TRACE_IPC) rt_log("%s: command %u answered with success and no data", s->name, rq->cmd);
     rs->result = 0;
 }
