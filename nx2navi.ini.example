@@ -82,6 +82,10 @@
 # Build shader stage libraries in the background ahead of time, and the threads for it (1 to 16; default 2). More
 # threads mostly wait on the graphics driver's lock: 16 on NVIDIA spent about 8 cores spinning in the driver.
 # lib_prebuild = 1
+# Which compute pipelines that build keeps in memory: recorded (default; only the compute shaders play has met, the
+# rest are built at their first dispatch from the pipeline cache, about 1 ms each) or all (every prepared compute
+# shader too: 5,700 pipelines, about 1 GB more process memory).
+# lib_prebuild_cs = recorded
 # lib_prebuild_threads = 2
 # 1: very large compute shaders that no cache holds are built on one background thread after the start. 0: each is
 # built when the game first uses it, which can hold that frame for a second or two.

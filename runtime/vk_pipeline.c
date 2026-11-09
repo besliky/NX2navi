@@ -4445,9 +4445,19 @@ static void lb_start(const uint32_t pr_hist[16], const uint32_t fs_hist[4]) {
     GfxWarmEnt *all = NULL;
     size_t total = gfx_shader_warm_list(&all), n = 0, n_cs = 0;
     LB.keep_n = ke && *ke ? atoi(ke) : 0;
+    // NX2NAVI_LIB_PREBUILD_CS: which compute pipelines the boot builds and keeps. "all" (the earlier behaviour) takes
+    // every compute shader of the warm list, recorded or only prepared: 5,719 pipelines kept, about 1 GB of process
+    // memory on an RTX 4060 Laptop (16 GB RAM; measured on the title screen, 2026-11-09). "recorded" (default) takes
+    // only those play met (priority 0); a prepared one the game reaches later is built at its first dispatch, from the
+    // pipeline cache in about 1 ms, and is recorded for the next start.
+    int cs_all = !strcmp(cfg_value("NX2NAVI_LIB_PREBUILD_CS"), "all");
+    size_t n_cs_prepared = 0;
     LB.e = malloc((total + 1) * sizeof *LB.e);
     for (size_t i = 0; LB.e && i < total; i++)
-        if (all[i].stage == GFX_STAGE_CS) LB.e[n++] = all[i];
+        if (all[i].stage == GFX_STAGE_CS) {
+            if (all[i].prio == 0 || cs_all) LB.e[n++] = all[i];
+            else n_cs_prepared++;
+        }
     n_cs = n;
     for (size_t i = 0; LB.e && i < total && (int32_t)(n - n_cs) < LB.keep_n; i++)
         if (all[i].stage != GFX_STAGE_CS && all[i].prio == 0) LB.e[n++] = all[i];
@@ -4480,9 +4490,11 @@ static void lb_start(const uint32_t pr_hist[16], const uint32_t fs_hist[4]) {
     if (!LB.big_words) snprintf(big, sizeof big, "compute shaders of every size");
     else snprintf(big, sizeof big, "compute shaders over %llu SPIR-V words %s", (unsigned long long)LB.big_words,
                   P.cache_control ? "only from the pipeline caches" : "left to their first dispatch");
-    rt_log("vk_pipeline: stage library prebuild: %zu compute pipelines and %zu recorded variants' libraries "
+    rt_log("vk_pipeline: stage library prebuild: %zu compute pipelines (%zu prepared but never met in play left to their "
+           "first dispatch, NX2NAVI_LIB_PREBUILD_CS %s) and %zu recorded variants' libraries "
            "(NX2NAVI_LIB_PREBUILD_KEEP %d) on %d idle-priority threads; library state clamp %u, polygon mode %u, depth "
-           "-w..w %u, samples %u; %s (NX2NAVI_LIB_PREBUILD_BIG)", n_cs < n ? n_cs : n, n > n_cs ? n - n_cs : 0, LB.keep_n,
+           "-w..w %u, samples %u; %s (NX2NAVI_LIB_PREBUILD_BIG)", n_cs < n ? n_cs : n, n_cs_prepared,
+           cs_all ? "all" : "recorded", n > n_cs ? n - n_cs : 0, LB.keep_n,
            started, LB.clamp, LB.poly, LB.minus_w, LB.samples, big);
 }
 
