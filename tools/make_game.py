@@ -920,8 +920,19 @@ def fast_clang(msys, clang, env):
     return fast if mine and clang_ident(fast, env) == mine else None
 
 
+# Per-machine compiler flags (anton-laptop fork): NX2NAVI_GUEST_CFLAGS is appended to every lifted-code compile after
+# its -march (so "-march=znver3 -mtune=znver3" replaces the level's generic x86-64-v3), NX2NAVI_GUEST_OPT replaces its
+# -O1, NX2NAVI_RUNTIME_CFLAGS is appended to every runtime compile. All three are part of the object keys through the
+# command itself, so a change compiles the files it touches again.
+def extra_flags(var):
+    return os.environ.get(var, '').split()
+
+
 def runtime_cmd(clang, clangxx, inc, level=0, fast=None, msys=None):
     """fast: fast_clang's compiler for the lifted code, with msys as its sysroot."""
+    guest_extra, rt_extra = extra_flags('NX2NAVI_GUEST_CFLAGS'), extra_flags('NX2NAVI_RUNTIME_CFLAGS')
+    guest_opt = os.environ.get('NX2NAVI_GUEST_OPT', '').strip() or '-O1'
+
     def cmd_for(src, dst):
         cpp = src.suffix in ('.cpp', '.cxx')
         # the lifted code at -O1 (its size makes -O2 slow to build), the runtime at -O2; neither may assume strict
@@ -933,8 +944,9 @@ def runtime_cmd(clang, clangxx, inc, level=0, fast=None, msys=None):
         cc = [str(fast), f'--sysroot={msys}'] if guest and fast else [str(clangxx if cpp else clang)]
         # -fdeclspec: third_party/ffx_api/ffx_api.h declares its entry points __declspec(dllexport) unconditionally
         declspec = ['-fdeclspec'] if cpp and not WIN else []
-        return [*cc, '-c', '-std=gnu++17' if cpp else '-std=gnu11', '-O1' if guest else '-O2',
-                *march, '-fno-strict-aliasing', '-w', *declspec, *inc, '-o', str(dst), str(src)]
+        return [*cc, '-c', '-std=gnu++17' if cpp else '-std=gnu11', guest_opt if guest else '-O2',
+                *march, *(guest_extra if guest else rt_extra), '-fno-strict-aliasing', '-w', *declspec, *inc,
+                '-o', str(dst), str(src)]
     return cmd_for
 
 
@@ -1161,6 +1173,9 @@ def step_compile(out, cache_dir, msys, jobs, romfs_job=None, update=False):
     fast = fast_clang(msys, clang, env)
     if fast:
         say(f'  the lifted code compiles with {fast}')
+    for var in ('NX2NAVI_GUEST_CFLAGS', 'NX2NAVI_GUEST_OPT', 'NX2NAVI_RUNTIME_CFLAGS'):
+        if os.environ.get(var, '').strip():
+            say(f'  {var}={os.environ[var].strip()}')
     cmd_for = runtime_cmd(clang, clangxx, inc, level, fast, msys)
     # The keys earlier versions gave the same compiles (compile_all alts): 0.6.0's, with the compiler's file time and,
     # with the fast compiler, its id and --sysroot; 0.5.0's and earlier's, with their kit's folder in the paths.
