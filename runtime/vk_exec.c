@@ -280,7 +280,7 @@ static int bc_target(const tex_t *t, const view_t *v, int has_v, const VkTexImag
         return 0;
     VkFormat fmt;
     BcStandIn s;
-    uint32_t level = has_v && v->set_levels ? v->base_level : 0;
+    uint32_t level = vk_tex_level(img, has_v ? v : NULL);
     if (level >= img->levels) {
         warn_once(W_LEVEL, "render target level %u of a %u-level texture: left out", level, img->levels);
         return 1;
@@ -321,7 +321,7 @@ static void resolve_target(const tex_t *t, const view_t *v, int has_v, int depth
                   t->d.format, t->d.target, t->d.width, t->d.height);
         return;
     }
-    uint32_t level = has_v && v->set_levels ? v->base_level : 0;
+    uint32_t level = vk_tex_level(img, has_v ? v : NULL);
     if (level >= img->levels) {
         warn_once(W_LEVEL, "render target level %u of a %u-level texture: left out", level, img->levels);
         return;

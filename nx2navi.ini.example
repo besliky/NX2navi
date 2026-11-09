@@ -129,6 +129,12 @@
 # With astc = gpu: re-encode the decoded ASTC textures to BC3, a quarter of the video memory, textures slightly blockier,
 # 0 or 1. Default: on when the GPU has less than 5 GB of video memory, off otherwise.
 # astc_bc = 1
+# Texture quality: high keeps every texture at the size the game made it; medium (default) starts the large ASTC
+# textures (1024 texels or more on the longer side) one mip level down, low starts those of 512 or more one level down
+# and those of 2048 or more two. Lower settings take most of those textures' video memory away (about three quarters
+# of it per level) at a loss of detail only seen up close; made for 8 GB cards, where the decoded textures filled the
+# budget. Read at start.
+# tex_quality = medium
 # Game memory shared with the GPU: auto (mirror on a discrete GPU, import on an integrated one), import (host memory
 # imported into Vulkan), mirror (pools used as buffers get a copy in video memory) or verify (mirror plus a check of
 # every copy; slow). On a discrete GPU import can be far slower than mirror, not slightly slower: the GPU reads the

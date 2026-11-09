@@ -440,10 +440,20 @@ typedef struct {
     uint8_t scale;                 // 1, or NX2NAVI_SHADOW_SCALE for a shadow map made larger than the game's (vk_texture.c
                                    // shadow_scale_of): width and height above are the larger ones, the game's regions
                                    // are multiplied by it
+    uint8_t lod0;                  // levels left off the top (vk_texture.c tex_skip_levels, NX2NAVI_TEX_QUALITY): the
+                                   // game's level L is image level L - lod0 (vk_tex_level); width, height and levels
+                                   // above are the image's, the game's are larger by lod0 levels
     uint8_t gone;                  // destroyed (vk_texture.c destroy_tex, texture lock held): the record stays readable until
                                    // the GPU is past the submission being recorded (vk_defer_free), as the replay and DLSS
                                    // keep pointers to render targets across a command buffer; no view of it is cached
 } VkTexImage;
+
+// The image level a view's base level names: a texture that starts at a lower level (lod0) holds the game's level L at
+// L - lod0, and the levels it left off at 0, its top.
+static inline uint32_t vk_tex_level(const VkTexImage *img, const view_t *v) {
+    uint32_t l = v && v->set_levels ? v->base_level : 0;
+    return l > img->lod0 ? l - img->lod0 : 0;
+}
 // The window texture the backend presents (vk_backend.c): *image and *format become the float picture the game copied
 // into it, when the last draw into it was that copy and the swapchain is HDR10.
 void vk_hdr_present_source(const VkTexImage *win, VkImage *image, VkFormat *format);

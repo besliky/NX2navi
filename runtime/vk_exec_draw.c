@@ -651,7 +651,7 @@ static VkImageView get_view(VkExec *ex, const VkTexImage *img, const view_t *v, 
     default: ok = img->type == VK_IMAGE_TYPE_2D; break;
     }
     if (!ok) return VK_NULL_HANDLE;
-    uint32_t l0 = hv && v->set_levels ? v->base_level : 0;
+    uint32_t l0 = vk_tex_level(img, hv ? v : NULL);
     if (l0 >= img->levels) return VK_NULL_HANDLE;
     uint32_t nl = hv && v->set_levels && v->nlevels ? v->nlevels : img->levels - l0;
     if (l0 + nl > img->levels) nl = img->levels - l0;
@@ -1419,7 +1419,7 @@ typedef struct { VkImage image; uint32_t l0, l1, a0, a1; } SubRange;
 
 static SubRange sub_of(const VkTexImage *img, const view_t *v, int hv) {
     SubRange r = {img->image, 0, img->levels, 0, img->layers};
-    if (hv && v->set_levels) r.l0 = v->base_level, r.l1 = v->base_level + (v->nlevels ? v->nlevels : img->levels);
+    if (hv && v->set_levels) r.l0 = vk_tex_level(img, v), r.l1 = r.l0 + (v->nlevels ? v->nlevels : img->levels);
     if (hv && v->set_layers) r.a0 = v->min_layer, r.a1 = v->min_layer + (v->nlayers ? v->nlayers : img->layers);
     return r;
 }

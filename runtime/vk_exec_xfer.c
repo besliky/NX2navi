@@ -533,7 +533,12 @@ static int sub_resolve(const tex_t *t, const view_t *v, int has_v, const NVNcopy
         warn_once(W_FORMAT, "copy of depth-stencil format %#x texture: skipped", t->d.format);
         return 0;
     }
-    s->level = has_v && v->set_levels ? v->base_level : 0;
+    if (has_v && v->set_levels && v->base_level < img->lod0) {   // a level tex_skip_levels left off: nothing holds it
+        warn_once(W_REGION, "copy to or from level %u of a texture whose image starts at the game's level %u: skipped",
+                  v->base_level, img->lod0);
+        return 0;
+    }
+    s->level = vk_tex_level(img, has_v ? v : NULL);
     s->layer0 = has_v && v->set_layers ? v->min_layer : 0;
     uint32_t lw = max1(img->width >> s->level), lh = max1(img->height >> s->level);
     int k = img->scale > 1 ? img->scale : 1;   // a larger shadow map: the game's region in its texels
