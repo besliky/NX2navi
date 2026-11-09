@@ -60,6 +60,8 @@ Commit census on the title screen (fork, build 01): guest memory 8 235 MiB (heap
 | e7 | fork, `gpu_passes = 1` (diagnosis) | 44.8 | 42.7 | 16.5 | 6 578 | 9 287 | 19 557 | 30 |
 | my03-high | fork build 03, `tex_quality = high` | 44.1 | 42.4 | 17.0 | 7 206 | 8 621 | 19 990 | 32 |
 | my04 | fork build 04, `tex_quality = medium` (default) | 43.6 | 41.7 | 17.4 | 6 246 | 8 493 | 19 186 | 32 |
+| my05 | fork build 05, `-march=znver3` lifted code and runtime | 44.2 | 43.5 | 17.1 | 6 247 | 8 952 | 19 280 | 31 |
+| my06 | build 06, rebased on upstream of 21:00 (tests ran alongside) | 41.1 | 40.1 | 18.9 | 6 257 | 8 204 | 19 247 | 30 |
 
 e5 ended in a device loss during an upload with the process at 21.8 GB of commit (ASTC as RGBA8 doubles the texture
 memory): a confirmation of the memory sensitivity, not a usable setting.

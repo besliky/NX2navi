@@ -134,6 +134,24 @@ with unicorn and capstone for the differential tests.
   budget no longer fills in this area, so the area loads and Hyrule Field have 1 GiB more before textures are evicted
   and re-uploaded, and the process commit is 1 GiB lower on a 16 GB machine.
 
+## 6. Built for this processor: `-march=znver3` for the lifted code and the runtime
+
+- No source change: `NX2NAVI_GUEST_CFLAGS=-march=znver3 NX2NAVI_RUNTIME_CFLAGS=-march=znver3` on the build (section
+  "Build"; the flags are in the compile step's key, commit "Put the per-machine compiler flags into the compile
+  step's key"). The stock build is x86-64-v3 for the lifted code and generic x86-64 for the runtime.
+- Measured (Kokiri Forest, same scene): 44.2 fps against 43.6, the replay thread's work per frame 10.9 ms against
+  11.4 ms (-4 %). Small, as expected: the frame is GPU-bound here (see the finding above). Kept, as it costs nothing
+  at run time; a full compile takes 15-17 minutes on this machine (691 files, 12 threads).
+- Not done: `-O2` for the lifted code (a longer compile for a CPU that is not the limit) and PGO (needs llvm-mingw
+  and 20-30 minutes of varied play on an instrumented build; the profile also has to be retrained after every lifter
+  change). Both are worth trying only if a CPU-bound scene appears.
+
+## Upstream
+
+The branch is rebased on `upstream/main` as it moves (2026-11-09 evening: 8 commits, among them DLSS multi frame
+generation, the fog trail fix and a 75 % scene hold without a temporal upscaler); no conflicts so far. After a rebase:
+rebuild (section "Daily use"), `ocarina.exe --selftest`, `--probe-cfg`, one measured run.
+
 ## Finding: the GPU runs at a 40 W power limit
 
 `nvidia-smi -q -d POWER` on this laptop: current power limit 40 W, default 35 W, maximum 45 W, "SW Power Capping"
